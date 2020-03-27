@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace XeroOAuth2Sample
+namespace WorkflowMaxOAuth2Sample
 {
     public class Program
     {

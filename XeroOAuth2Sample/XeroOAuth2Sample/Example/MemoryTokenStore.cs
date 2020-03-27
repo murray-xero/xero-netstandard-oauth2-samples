@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Xero.NetStandard.OAuth2.Client;
 using Xero.NetStandard.OAuth2.Token;
 
-namespace XeroOAuth2Sample.Example
+namespace WorkflowMaxOAuth2Sample.Example
 {
     public class MemoryTokenStore
     {

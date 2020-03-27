@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace XeroOAuth2Sample.Extensions
+namespace WorkflowMaxOAuth2Sample.Extensions
 {
     public static class ClaimsPrincipalExtensions
     {

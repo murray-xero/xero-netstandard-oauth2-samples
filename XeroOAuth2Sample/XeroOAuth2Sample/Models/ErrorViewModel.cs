@@ -1,4 +1,4 @@
-namespace XeroOAuth2Sample.Models
+namespace WorkflowMaxOAuth2Sample.Models
 {
     public class ErrorViewModel
     {

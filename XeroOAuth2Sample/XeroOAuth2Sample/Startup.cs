@@ -4,19 +4,17 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Xero.NetStandard.OAuth2.Api;
 using Xero.NetStandard.OAuth2.Client;
 using Xero.NetStandard.OAuth2.Config;
 using Xero.NetStandard.OAuth2.Token;
-using XeroOAuth2Sample.Example;
-using XeroOAuth2Sample.Extensions;
+using WorkflowMaxOAuth2Sample.Example;
+using WorkflowMaxOAuth2Sample.Extensions;
 
-namespace XeroOAuth2Sample
+namespace WorkflowMaxOAuth2Sample
 {
     public class Startup
     {
@@ -39,8 +37,8 @@ namespace XeroOAuth2Sample
             });
 
             services.TryAddSingleton<IXeroClient, XeroClient>();
-            services.TryAddSingleton<IAccountingApi, AccountingApi>();
             services.TryAddSingleton<MemoryTokenStore>();
+            services.AddHttpClient("WorkflowMax", client => { client.BaseAddress = new Uri("https://api.xero.com/workflowmax/3.0/"); });
 
             services.AddAuthentication(options =>
             {
@@ -77,47 +75,16 @@ namespace XeroOAuth2Sample
                 options.ResponseType = "code";
 
                 options.Scope.Clear();
-                options.Scope.Add("openid");
-                options.Scope.Add("profile");
-                options.Scope.Add("email");
-
-                options.CallbackPath = "/signin-oidc";
-
-                options.Events = new OpenIdConnectEvents
-                {
-                    OnTokenValidated = OnTokenValidated()
-                };
-            })
-            .AddOpenIdConnect("XeroSignUp", options =>
-            {
-                options.Authority = "https://identity.xero.com";
-
-                options.ClientId = Configuration["Xero:ClientId"];
-                options.ClientSecret = Configuration["Xero:ClientSecret"];
-
-                options.ResponseType = "code";
-
-                options.Scope.Clear();
                 options.Scope.Add("offline_access");
                 options.Scope.Add("openid");
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
-                options.Scope.Add("accounting.settings");
-                options.Scope.Add("accounting.transactions");
-
-                options.CallbackPath = "/signup-oidc";
+                options.Scope.Add("workflowmax");
 
                 options.Events = new OpenIdConnectEvents
                 {
                     OnTokenValidated = OnTokenValidated()
                 };
-            });
-
-            services.Configure<CookiePolicyOptions>(options =>
-            {
-                // This lambda determines whether user consent for non-essential cookies is needed for a given request.
-                options.CheckConsentNeeded = context => true;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
@@ -155,7 +122,6 @@ namespace XeroOAuth2Sample
             }
 
             app.UseStaticFiles();
-            app.UseCookiePolicy();
 
             app.UseAuthentication();
 

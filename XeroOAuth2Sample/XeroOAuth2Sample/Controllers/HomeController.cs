@@ -1,30 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Xero.NetStandard.OAuth2.Api;
 using Xero.NetStandard.OAuth2.Client;
-using XeroOAuth2Sample.Example;
-using XeroOAuth2Sample.Extensions;
-using XeroOAuth2Sample.Models;
+using WorkflowMaxOAuth2Sample.Example;
+using WorkflowMaxOAuth2Sample.Extensions;
+using WorkflowMaxOAuth2Sample.Models;
+using WorkflowMaxOAuth2Sample.Models.ClientApi;
 
-namespace XeroOAuth2Sample.Controllers
+namespace WorkflowMaxOAuth2Sample.Controllers
 {
     public class HomeController : Controller
     {
         private readonly MemoryTokenStore _tokenStore;
         private readonly IXeroClient _xeroClient;
-        private readonly IAccountingApi _accountingApi;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public HomeController(MemoryTokenStore tokenStore, IXeroClient xeroClient, IAccountingApi accountingApi)
+        public HomeController(MemoryTokenStore tokenStore, IXeroClient xeroClient, IHttpClientFactory httpClientFactory)
         {
             _tokenStore = tokenStore;
             _xeroClient = xeroClient;
-            _accountingApi = accountingApi;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet]
@@ -32,7 +34,7 @@ namespace XeroOAuth2Sample.Controllers
         {
             if (User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("OutstandingInvoices");
+                return RedirectToAction(nameof(TenantClientLists));
             }
 
             return View();
@@ -40,7 +42,7 @@ namespace XeroOAuth2Sample.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> OutstandingInvoices()
+        public async Task<IActionResult> TenantClientLists()
         {
             var token = await _tokenStore.GetAccessTokenAsync(User.XeroUserId());
 
@@ -48,28 +50,41 @@ namespace XeroOAuth2Sample.Controllers
 
             if (!connections.Any())
             {
-                return RedirectToAction("NoTenants");
+                return RedirectToAction(nameof(NoTenants));
             }
 
-            var data = new Dictionary<string, int>();
+            var data = new List<(Guid tenantId, ClientListResponse clients)>();
+
+            var client = _httpClientFactory.CreateClient("WorkflowMax");
+            client.SetBearerToken(token.AccessToken);
 
             foreach (var connection in connections)
             {
-                var accessToken = token.AccessToken;
-                var tenantId = connection.TenantId.ToString();
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri("client.api/list", UriKind.Relative),
+                    Headers = { { "Xero-Tenant-Id", connection.TenantId.ToString() } }
+                };
 
-                var organisations = await _accountingApi.GetOrganisationsAsync(accessToken, tenantId);
-                var organisationName = organisations._Organisations[0].Name;
+                var response = await client.SendAsync(request);
 
-                var outstandingInvoices = await _accountingApi.GetInvoicesAsync(accessToken, tenantId, statuses: new List<string>{"AUTHORISED"}, where: "Type == \"ACCREC\"");
+                response.EnsureSuccessStatusCode();
 
-                data[organisationName] = outstandingInvoices._Invoices.Count;
+                var clients = await response.Content.ReadAsAsync<ClientListResponse>(new[]
+                {
+                    new XmlMediaTypeFormatter
+                    {
+                        UseXmlSerializer = true
+                    }
+                });
+
+                data.Add((connection.TenantId, clients));
             }
 
-            var model = new OutstandingInvoicesViewModel
+            var model = new TenantClientListsModel
             {
-                Name = $"{User.FindFirstValue(ClaimTypes.GivenName)} {User.FindFirstValue(ClaimTypes.Surname)}",
-                Data = data
+                LoggedInUser = $"{User.FindFirstValue(ClaimTypes.GivenName)} {User.FindFirstValue(ClaimTypes.Surname)}",
+                TenantClients = data
             };
 
             return View(model);
@@ -83,27 +98,10 @@ namespace XeroOAuth2Sample.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AddConnection()
-        {
-            // Signing out of this client app allows the user to be taken through the Xero Identity connection flow again, allowing more organisations to be connected
-            // The user will not need to log in again because they're only signed out of our app, not Xero.
-            await HttpContext.SignOutAsync(); 
-
-            return RedirectToAction("SignUp");
-        }
-
-        [HttpGet]
-        [Authorize(AuthenticationSchemes = "XeroSignUp")]
-        public IActionResult SignUp()
-        {
-            return RedirectToAction("OutstandingInvoices");
-        }
-
-        [HttpGet]
         [Authorize(AuthenticationSchemes = "XeroSignIn")]
         public IActionResult SignIn()
         {
-            return RedirectToAction("OutstandingInvoices");
+            return RedirectToAction(nameof(TenantClientLists));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

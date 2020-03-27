@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "XeroOAuth2Sample": {
+    "WorkflowMaxOAuth2Sample": {
       "commandName": "Project",
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5000",
