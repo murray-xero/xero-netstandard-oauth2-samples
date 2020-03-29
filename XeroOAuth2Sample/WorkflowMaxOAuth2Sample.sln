@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29920.165
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkflowMaxOAuth2Sample", "XeroOAuth2Sample\WorkflowMaxOAuth2Sample.csproj", "{C493BADF-2703-4BE5-B8D7-4A3D42E21487}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkflowMaxOAuth2Sample", "WorkflowMaxOAuth2Sample\WorkflowMaxOAuth2Sample.csproj", "{C493BADF-2703-4BE5-B8D7-4A3D42E21487}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

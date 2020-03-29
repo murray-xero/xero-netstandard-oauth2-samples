@@ -50,7 +50,7 @@ namespace WorkflowMaxOAuth2Sample
                 options.Cookie.Name = "XeroIdentity";
 
                 // Clean up cookies that don't match in local MemoryTokenStore.
-                // In reality you wouldn't need this, as you'd be storing tokens in a real data store somewhere peripheral, so they won't go missing between restarts
+                // In reality you wouldn't need this, as you'd be storing tokens in a real, persistent data store, so they persist between restarts
                 options.Events = new CookieAuthenticationEvents
                 {
                     OnValidatePrincipal = async context =>

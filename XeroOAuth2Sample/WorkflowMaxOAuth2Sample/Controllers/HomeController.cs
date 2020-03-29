@@ -48,6 +48,8 @@ namespace WorkflowMaxOAuth2Sample.Controllers
 
             var connections = await _xeroClient.GetConnectionsAsync(token);
 
+            connections = connections.Where(c => c.TenantType == "WORKFLOWMAX").ToList();
+
             if (!connections.Any())
             {
                 return RedirectToAction(nameof(NoTenants));
@@ -58,25 +60,10 @@ namespace WorkflowMaxOAuth2Sample.Controllers
             var client = _httpClientFactory.CreateClient("WorkflowMax");
             client.SetBearerToken(token.AccessToken);
 
+            //Retrieve the WorfflowMax clients for each connection we have access to
             foreach (var connection in connections)
             {
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri("client.api/list", UriKind.Relative),
-                    Headers = { { "Xero-Tenant-Id", connection.TenantId.ToString() } }
-                };
-
-                var response = await client.SendAsync(request);
-
-                response.EnsureSuccessStatusCode();
-
-                var clients = await response.Content.ReadAsAsync<ClientListResponse>(new[]
-                {
-                    new XmlMediaTypeFormatter
-                    {
-                        UseXmlSerializer = true
-                    }
-                });
+                ClientListResponse clients = await GetClients(client, connection.TenantId);
 
                 data.Add((connection.TenantId, clients));
             }
@@ -88,6 +75,28 @@ namespace WorkflowMaxOAuth2Sample.Controllers
             };
 
             return View(model);
+        }
+
+        private static async Task<ClientListResponse> GetClients(HttpClient client, Guid tenantId)
+        {
+            var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri("client.api/list", UriKind.Relative),
+                Headers = { { "Xero-Tenant-Id", tenantId.ToString() } }
+            };
+
+            var response = await client.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            var clients = await response.Content.ReadAsAsync<ClientListResponse>(new[]
+            {
+                    new XmlMediaTypeFormatter
+                    {
+                        UseXmlSerializer = true
+                    }
+                });
+            return clients;
         }
 
         [HttpGet]
