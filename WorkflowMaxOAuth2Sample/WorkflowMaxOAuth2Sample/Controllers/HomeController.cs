@@ -60,7 +60,7 @@ namespace WorkflowMaxOAuth2Sample.Controllers
             var client = _httpClientFactory.CreateClient("WorkflowMax");
             client.SetBearerToken(token.AccessToken);
 
-            //Retrieve the WorfflowMax clients for each connection we have access to
+            //Retrieve the WorkflowMax clients for each connection we have access to
             foreach (var connection in connections)
             {
                 ClientListResponse clients = await GetClients(client, connection.TenantId);
